@@ -1,0 +1,427 @@
+Okay, this is a great project to get started with O3DE! It covers many fundamental aspects.
+
+Since O3DE is a complex engine and relies heavily on its visual editor, providing exact, copy-pasteable code for everything is challenging without being in the editor itself. Instead, I'll give you a step-by-step conceptual guide on how to approach this, detailing the components, scripts (using Script Canvas logic), and entities you'll need.
+
+Prerequisites:
+
+O3DE Installed: Ensure you have the O3DE engine and Project Manager installed.
+
+New Project Created:
+
+Open O3DE Project Manager.
+
+Click "New Project" -> "Create New Project".
+
+Name it something like "SimpleFPS".
+
+Crucially, enable the necessary Gems:
+
+DefaultScene: (Usually enabled by default)
+
+PrimitiveAsset: For creating cubes, planes, etc., directly in the editor.
+
+PhysX: For physics and collision.
+
+ScriptCanvas: For visual scripting (or Lua Scripting if you prefer).
+
+InputManagementFramework: For handling input.
+
+StartingPointInput: Provides some basic input bindings.
+
+StartingPointCamera: Provides a basic camera setup.
+
+Atom Renderer Gem: (Usually enabled by default)
+
+Configure and build your project. This might take some time.
+
+Once built, open the project in the O3DE Editor.
+
+Step-by-Step Implementation Guide:
+
+Phase 1: Setting up the World and Player Basics
+
+Create the Ground:
+
+In the Entity Outliner, right-click -> "Create entity". Name it Ground.
+
+With Ground selected, in the Entity Inspector, click "Add Component".
+
+Add a Mesh component.
+
+In the Mesh component, for "Mesh asset", click the folder icon and select "Browse PxActor". Navigate to Gems/PrimitiveAsset/Assets/meshes/plane.azmodel.
+
+Add a Material component.
+
+Click "Create new material asset" (or assign an existing one).
+
+Edit the material: Set the "Base Color" to green.
+
+Scale the Ground entity's Transform component (e.g., X: 100, Y: 100, Z: 1) to make it large.
+
+Add a PhysX Static Rigid Body component (so things can collide with it).
+
+Add a PhysX Box Shape collider component (it will default to the mesh bounds, which is fine for a plane).
+
+Create the Player Entity:
+
+Create a new entity, name it Player.
+
+This entity will be our main player controller.
+
+Add a PhysX Character Controller component. This will handle movement and basic collisions with the ground/static objects much better than manually moving a transform.
+
+Adjust its Radius and Height as needed.
+
+Set Up Axis to Z.
+
+Add an Input component. This will receive keyboard/mouse events.
+
+Add a Script Canvas component. Click "Create new Script Canvas asset" and name it PlayerController.scriptcanvas. Open it.
+
+Implement Player Movement (W, S, A, D) - In PlayerController.scriptcanvas:
+
+Input Handling:
+
+Add Input Handler nodes for "move_forward", "move_backward", "strafe_left", "strafe_right". (You'll need to define these actions in the Input Bindings Editor: Edit -> Editor Settings -> Input Bindings. Map W to "move_forward_keyboard", S to "move_backward_keyboard", etc., then create input event groups like "move_forward" that combine these).
+
+Alternatively, use Keyboard input event nodes directly for W, S, A, D.
+
+Movement Logic:
+
+Store movement input (e.g., +1 for forward, -1 for backward) in variables.
+
+On TickBus (every frame):
+
+Get the Player entity's Transform (specifically its forward and right vectors).
+
+Calculate a movementDirection vector based on the input variables and the entity's forward/right vectors. Normalize this vector.
+
+Multiply by playerRunSpeed (a variable you can define in Script Canvas).
+
+Use the PhysX Character Controller Bus -> Move node to move the player. Pass the calculated velocity vector.
+
+Implement Player Aiming (Mouse) - In PlayerController.scriptcanvas:
+
+Create a Camera Entity:
+
+Create a new entity, name it PlayerCamera.
+
+Make PlayerCamera a child of the Player entity in the Entity Outliner.
+
+Position it appropriately relative to the Player (e.g., slightly forward and up for a first-person view).
+
+Add a Camera component to PlayerCamera.
+
+Add an Audio Listener component (if you plan sound later).
+
+Mouse Input Handling (in PlayerController.scriptcanvas):
+
+Add Input Handler nodes for "look_mouse_delta_x" and "look_mouse_delta_y" (these are usually pre-defined by StartingPointInput).
+
+Rotation Logic:
+
+Yaw (Left/Right):
+
+On "look_mouse_delta_x" input:
+
+Get the Player entity.
+
+Use TransformBus -> RotateAroundLocalZAppend (or similar) on the Player entity by delta_x * mouseSensitivity_X.
+
+Pitch (Up/Down):
+
+On "look_mouse_delta_y" input:
+
+Get the PlayerCamera entity.
+
+Use TransformBus -> RotateAroundLocalXAppend (or similar) on the PlayerCamera entity by delta_y * mouseSensitivity_Y.
+
+Clamp the pitch: After rotating, get the current X rotation of the camera, clamp it (e.g., between -80 and 80 degrees), and set it back to prevent flipping.
+
+Create the Player's Gun:
+
+Create an entity, name it Gun.
+
+Make Gun a child of PlayerCamera.
+
+Position and rotate Gun so it looks like it's being held (e.g., slightly to the right and forward from the camera's center).
+
+Add a Mesh component.
+
+Use the cube.azmodel primitive.
+
+Scale its Transform to be an elongated cube (e.g., X: 0.1, Y: 0.6, Z: 0.1).
+
+Add a Material component (e.g., dark grey).
+
+Phase 2: Firing Bullets
+
+Create a Bullet Slice (Prefab):
+
+Create a new entity, name it Bullet_Prefab.
+
+Add a Mesh component (cube.azmodel).
+
+Scale its Transform to be small (e.g., X: 0.05, Y: 0.05, Z: 0.05).
+
+Add a Material component (e.g., yellow).
+
+Add a PhysX Rigid Body component.
+
+Set "Kinematic" to false (so it's affected by physics/script).
+
+Enable "CCD (Continuous Collision Detection)" if bullets are fast.
+
+Add a PhysX Box Shape collider component.
+
+Set "Trigger" to true if you want to handle collisions via script without physical bouncing. Otherwise, leave it as a solid collider.
+
+Add a Script Canvas component. Create BulletBehavior.scriptcanvas.
+
+In BulletBehavior.scriptcanvas:
+
+On OnEntityActivated:
+
+Get the entity's TransformBus -> GetWorldTM. Get the forward vector from this matrix.
+
+Apply an impulse: PhysX Rigid Body Bus -> ApplyLinearImpulse using forwardVector * bulletSpeed.
+
+Add a Timing -> Delay node (e.g., 3 seconds). After the delay, Entity -> DestroyThisEntity.
+
+(Collision with enemy will be added later).
+
+Right-click Bullet_Prefab in the Entity Outliner -> "Create slice...". Save it as Bullet.slice.
+
+You can now delete Bullet_Prefab from the scene.
+
+Implement Firing Logic (in PlayerController.scriptcanvas):
+
+Add an Input Handler node for "attack_primary" (Left Mouse Button - check Input Bindings).
+
+When "attack_primary" is Held or Pressed:
+
+Get the Gun entity's transform (or a dedicated "Muzzle" child entity of the gun for precise spawn location).
+
+Use the Spawner component (or GameEntityContextRequestBus -> CreateDynamicEntity) to spawn an instance of Bullet.slice.
+
+To use the Spawner component: Add a Spawner component to your Player (or Gun) entity. In its properties, assign the Bullet.slice to its "Slice Asset" field.
+
+Then, in Script Canvas, get the Spawner component and call Spawn or SpawnRelative.
+
+Set the spawned bullet's initial position and rotation to match the gun's muzzle.
+
+(The bullet's own script will handle its forward movement).
+
+Phase 3: Environment Details - Houses
+
+Create a House Slice (Prefab):
+
+Create an entity, name it House_Base_Prefab.
+
+Add a Mesh component (cube.azmodel). Scale it to be house-sized (e.g., X: 5, Y: 5, Z: 3).
+
+Add a Material component (e.g., brown).
+
+Add a PhysX Static Rigid Body component.
+
+Add a PhysX Box Shape collider.
+
+Create another entity, name it House_Roof_Prefab.
+
+Make House_Roof_Prefab a child of House_Base_Prefab.
+
+Add a Mesh component. For a pyramid, you could use cone.azmodel from Primitive Assets.
+
+Scale and position it to sit on top of the cube base. You might need to set the cone's "Sides" property to 4 in its mesh asset properties (if editable, or accept a cone shape). Alternatively, use another scaled cube.
+
+Add a Material component (e.g., dark red).
+
+Add a PhysX Static Rigid Body component (or if it's a child of a static body, its collider will be part of the compound shape).
+
+Add a PhysX Box Shape or PhysX Mesh Shape (if using a cone) collider.
+
+Select House_Base_Prefab (the parent) and create a slice: House.slice.
+
+Delete the prefab entities from the scene.
+
+Randomly Place Houses:
+
+Create a new entity, name it LevelManager.
+
+Add a Script Canvas component. Create LevelSetup.scriptcanvas.
+
+In LevelSetup.scriptcanvas:
+
+On OnEntityActivated (or a custom event):
+
+Loop a certain number of times (e.g., 10 houses).
+
+Inside the loop:
+
+Generate random X and Y coordinates within your desired world bounds (e.g., -40 to +40).
+
+Use GameEntityContextRequestBus -> CreateDynamicEntity to spawn House.slice.
+
+Set the spawned house's Transform position to the random X, Y, and Z=0 (or half its height if origin is center).
+
+Phase 4: Enemies
+
+Create an Enemy Slice (Prefab):
+
+Create an entity, name it Enemy_Prefab.
+
+Add a Mesh component (cube.azmodel).
+
+Scale it (e.g., X: 1, Y: 1, Z: 1).
+
+Add a Material component (set "Base Color" to red).
+
+Add a PhysX Character Controller (if you want them to navigate terrain better) or a PhysX Rigid Body (if simpler movement is okay). For "approach player," a Character Controller is often smoother.
+
+Add a PhysX Box Shape collider. Make sure it's set as a trigger if you want to detect overlap without physical collision response, or leave as a solid collider.
+
+Add a Script Canvas component. Create EnemyAI.scriptcanvas.
+
+Add a Tag component and add a tag named "Enemy".
+
+Right-click Enemy_Prefab -> "Create slice...". Save as Enemy.slice.
+
+Delete Enemy_Prefab from the scene.
+
+Enemy Behavior (in EnemyAI.scriptcanvas):
+
+Properties:
+
+PlayerEntity: An EntityId variable (you'll need to find/set this).
+
+MoveSpeed: A Number variable (e.g., 2.0, make it slightly slower than player).
+
+On OnEntityActivated:
+
+Find the player entity: You can use TagComponentRequestBus -> FindTaggedEntities with the "Player" tag (you'll need to add a Tag component with "Player" to your Player entity). Get the first result. Store its ID in PlayerEntity.
+
+On TickBus:
+
+If PlayerEntity is valid:
+
+Get self entity's position (TransformBus -> GetWorldTranslation).
+
+Get player entity's position (TransformBus -> GetWorldTranslation using PlayerEntity as target).
+
+Calculate directionToPlayer = (playerPosition - selfPosition).Normalized().
+
+Calculate velocity = directionToPlayer * MoveSpeed.
+
+Use PhysX Character Controller Bus -> Move (or if using Rigid Body, SetLinearVelocity).
+
+Optional: Make the enemy face the player: TransformBus -> SetWorldRotationQuaternion (calculate quaternion to look at player).
+
+Enemy Spawning (in LevelSetup.scriptcanvas or a new EnemySpawner.scriptcanvas):
+
+Similar to house spawning, but make it periodic or based on player proximity.
+
+On TickBus (or a Timing -> Timer node):
+
+Check if the number of active enemies is below a threshold.
+
+If so, generate a random position around the player (e.g., player position + random offset within a ring).
+
+Spawn Enemy.slice at that position.
+
+Phase 5: Health and Combat
+
+Player Health (in PlayerController.scriptcanvas):
+
+Add a Number variable: Health, default to 100.
+
+(Optional) Add UI elements to display health.
+
+Create a function/node flow TakeDamage(amount):
+
+Subtract amount from Health.
+
+Print "Player Health: " + Health.
+
+If Health <= 0, print "Game Over" (and potentially despawn player or load a game over screen).
+
+On your Player entity, ensure it has a PhysX Collider (the Character Controller provides one) and a Tag component with the tag "Player".
+
+Enemy Contacts Player (Collision Handling):
+
+In EnemyAI.scriptcanvas (if enemy collider is a trigger):
+
+Add a PhysX Trigger Area Notification Bus -> OnTriggerEnter node.
+
+Get the Other Entity from the event.
+
+Use TagComponentRequestBus -> HasTag on Other Entity to check if it has the "Player" tag.
+
+If it's the "Player":
+
+Send a custom event or directly call the TakeDamage function on the player's script (e.g., ScriptCanvas -> ExecuteFunctionByName on Player entity, function name "TakeDamage", argument 10).
+
+Entity -> DestroyThisEntity (destroy the enemy).
+
+Alternatively, on PlayerController.scriptcanvas (if player collider is a trigger, or for more centralized logic):
+
+Add PhysX Trigger Area Notification Bus -> OnTriggerEnter.
+
+Get Other Entity. Check if it has the "Enemy" tag.
+
+If "Enemy":
+
+Call TakeDamage(10).
+
+Entity -> DestroyEntity (target the Other Entity - the enemy).
+
+Bullet Contacts Enemy (Collision Handling):
+
+On your Bullet_Prefab's PhysX Box Shape collider, make sure it's set as a Trigger.
+
+Add a Tag component to the Bullet_Prefab and add a tag "Bullet".
+
+In EnemyAI.scriptcanvas (if enemy collider is a trigger):
+
+In the existing OnTriggerEnter logic:
+
+Also check if Other Entity has the "Bullet" tag.
+
+If "Bullet":
+
+Entity -> DestroyThisEntity (destroy the enemy).
+
+Entity -> DestroyEntity (target the Other Entity - the bullet).
+
+Alternatively, in BulletBehavior.scriptcanvas (more common for bullets):
+
+Add PhysX Trigger Area Notification Bus -> OnTriggerEnter.
+
+Get Other Entity. Check if it has the "Enemy" tag.
+
+If "Enemy":
+
+Entity -> DestroyEntity (target the Other Entity - the enemy).
+
+Entity -> DestroyThisEntity (destroy the bullet).
+
+Important Considerations and Tips:
+
+Tags: Use Tags extensively (Player, Enemy, Bullet, Ground) for identifying entities in collision/trigger events. Add the Tag component to your entities/slices.
+
+Input Bindings Editor: (Edit -> Editor Settings -> Input Bindings). This is where you define abstract input actions (like "move_forward") and map them to actual keys/mouse buttons.
+
+Script Canvas Debugging: Use Debug -> Print nodes in Script Canvas to output values and trace execution flow.
+
+O3DE Console: Keep an eye on the console (usually at the bottom of the editor) for errors and messages.
+
+Slices: Get comfortable with creating and using Slices. They are O3DE's prefabs and are essential for reusability.
+
+Transformations: O3DE typically uses a Z-up coordinate system.
+
+Modularity: Try to keep scripts focused on their specific entity's behavior.
+
+Performance: For many enemies or bullets, consider object pooling instead of constant spawning/destroying, but for a simple game, direct spawning is fine.
+
+Iterations: Start simple. Get one feature working (e.g., player movement) before moving to the next.
+
+This is a comprehensive outline. You'll need to explore the O3DE Editor, find the right nodes in Script Canvas, and connect them logically. The O3DE documentation and community forums/Discord are valuable resources if you get stuck on specific components or Script Canvas nodes. Good luck!

@@ -1,0 +1,13 @@
+create a O3DE project that is a simple first-person shooter game with the following features:
+
+-the player runs forward and backward with keys W and S
+-the player strafes left and right with keys A and D
+-the player's aiming can be controlled with mouse movement
+-the player has a gun, represented with an elongated cube, that fires smaller cubes as bullets when pressing left mouse button
+-houses made of cubes with pyramid roofs are randomly placed around the world
+-the ground is a flat green plane
+-enemies represented by red cubes spawn randomly around the player
+-enemy behavior is to approach the player in a speed slightly slower than the player's run speed
+-the player starts with 100 health
+-when an enemy contacts the player, the enemy is destroyed, and the player's health decreases by 10 points
+-when an enemy contacts a bullet, the enemy is destroyed

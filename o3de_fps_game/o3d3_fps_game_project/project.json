@@ -1,0 +1,49 @@
+{
+    "project_name": "SimpleFPS",
+    "version": "1.0.0",
+    "project_id": "{BAEFFE16-7DC6-46D9-9F30-A82EB048D9DC}",
+    "origin": "The primary repo for SimpleFPS goes here: i.e. http://www.mydomain.com",
+    "license": "What license SimpleFPS uses goes here: i.e. https://opensource.org/licenses/Apache-2.0 Or https://opensource.org/licenses/MIT etc.",
+    "display_name": "SimpleFPS",
+    "summary": "A short description of SimpleFPS.",
+    "canonical_tags": [
+        "Project"
+    ],
+    "user_tags": [
+        "SimpleFPS"
+    ],
+    "icon_path": "preview.png",
+    "engine": "o3de-sdk",
+    "external_subdirectories": [
+        "Gem"
+    ],
+    "restricted": "SimpleFPS",
+    "gem_names": [
+        "Atom",
+        "AudioSystem",
+        "CameraFramework",
+        "DebugDraw",
+        "DiffuseProbeGrid",
+        "EMotionFX",
+        "EditorPythonBindings",
+        "GameState",
+        "ImGui",
+        "LandscapeCanvas",
+        "LyShine",
+        "MiniAudio",
+        "PhysX",
+        "PrefabBuilder",
+        "PrimitiveAssets",
+        "RemoteTools",
+        "SaveData",
+        "SceneProcessing",
+        "ScriptCanvasPhysics",
+        "ScriptEvents",
+        "SimpleFPS",
+        "StartingPointCamera",
+        "StartingPointInput",
+        "TextureAtlas",
+        "WhiteBox"
+    ],
+    "engine_version": "2.3.2"
+}
